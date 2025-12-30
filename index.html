@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Happy New Year 2026 – My Beloved Wife</title>
+
+<style>
+:root {
+  --bg1:#0b1026;
+  --bg2:#1c2a4a;
+  --gold:#f5d37b;
+  --ice:#cfe9ff;
+  --glass:rgba(255,255,255,.08);
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+  background:radial-gradient(circle at top,var(--bg2),var(--bg1));
+  color:white;
+}
+
+.screen{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:opacity 1s ease;
+}
+
+.hidden{opacity:0;pointer-events:none}
+
+.card{
+  width:min(92vw,420px);
+  padding:32px;
+  background:var(--glass);
+  backdrop-filter:blur(14px);
+  border-radius:18px;
+  text-align:center;
+  box-shadow:0 30px 80px rgba(0,0,0,.6);
+}
+
+input{
+  width:100%;
+  padding:14px;
+  border-radius:12px;
+  border:none;
+  outline:none;
+  font-size:1rem;
+  text-align:center;
+}
+
+button{
+  margin-top:24px;
+  padding:14px 28px;
+  border-radius:40px;
+  border:1px solid var(--gold);
+  background:transparent;
+  color:var(--gold);
+  font-size:1rem;
+  cursor:pointer;
+}
+
+button:hover{background:rgba(255,215,150,.12)}
+
+canvas{
+  position:absolute;
+  inset:0;
+}
+
+h1{
+  font-size:clamp(2rem,5vw,3.2rem);
+  letter-spacing:1px;
+  color:var(--gold);
+  text-align:center;
+}
+
+.subtitle{
+  font-size:1.3rem;
+  margin-top:10px;
+  opacity:.9;
+}
+
+#cta{
+  margin-top:40px;
+  display:none;
+}
+
+.slide{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:30px;
+  opacity:0;
+  transition:opacity 1s ease;
+}
+
+.slide.active{opacity:1}
+
+.quote-box{
+  max-width:800px;
+  text-align:center;
+  font-size:clamp(1.2rem,3.8vw,2rem);
+  line-height:1.6;
+  background:var(--glass);
+  padding:40px;
+  border-radius:20px;
+  box-shadow:0 20px 60px rgba(0,0,0,.5);
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="fx"></canvas>
+
+<!-- PASSWORD SCREEN -->
+<div id="lock" class="screen">
+  <div class="card">
+    <h2>Enter the name written in my heart</h2>
+    <br/>
+    <input id="pass" placeholder="Type here…" />
+  </div>
+</div>
+
+<!-- FIREWORK MESSAGE -->
+<div id="celebrate" class="screen hidden">
+  <div style="text-align:center">
+    <h1>Happy New Year</h1>
+    <div class="subtitle">My Beloved Wife</div>
+    <div class="subtitle">2026</div>
+    <button id="cta">New Year Wishes</button>
+  </div>
+</div>
+
+<!-- SLIDES -->
+<div id="slides" class="screen hidden"></div>
+
+<script>
+/* ================== PERFORMANCE ================== */
+const mem = navigator.deviceMemory || 2;
+const LOW = mem <= 2;
+const snowCount = LOW ? 40 : 120;
+const fireCount = LOW ? 30 : 80;
+
+/* ================== CANVAS FX ================== */
+const canvas = document.getElementById("fx");
+const ctx = canvas.getContext("2d");
+let W,H;
+function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight}
+addEventListener("resize",resize);resize();
+
+let snow=[], fireworks=[];
+for(let i=0;i<snowCount;i++){
+  snow.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*2+1,s:Math.random()+.5});
+}
+
+function firework(){
+  const x=Math.random()*W;
+  const y=Math.random()*H*0.5;
+  for(let i=0;i<fireCount;i++){
+    fireworks.push({
+      x,y,
+      vx:(Math.random()-.5)*3,
+      vy:(Math.random()-.5)*3,
+      life:60
+    });
+  }
+}
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+
+  // snow
+  ctx.fillStyle="rgba(255,255,255,.8)";
+  snow.forEach(s=>{
+    ctx.beginPath();
+    ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+    ctx.fill();
+    s.y+=s.s;
+    if(s.y>H){s.y=0}
+  });
+
+  // fireworks
+  fireworks=fireworks.filter(p=>p.life-- >0);
+  fireworks.forEach(p=>{
+    ctx.fillStyle=`rgba(255,215,150,${p.life/60})`;
+    ctx.fillRect(p.x,p.y,2,2);
+    p.x+=p.vx;p.y+=p.vy;
+  });
+
+  requestAnimationFrame(draw);
+}
+draw();
+
+/* ================== PASSWORD FLOW ================== */
+const pass = document.getElementById("pass");
+pass.addEventListener("keydown",e=>{
+  if(e.key==="Enter"){
+    if(pass.value.trim().toLowerCase()==="farhana akter rova"){
+      document.getElementById("lock").classList.add("hidden");
+      document.getElementById("celebrate").classList.remove("hidden");
+      firework();
+      setTimeout(()=>firework(),1200);
+      setTimeout(()=>firework(),2400);
+      setTimeout(()=>document.getElementById("cta").style.display="inline-block",8000);
+    } else {
+      pass.style.transform="shake 0.3s";
+      setTimeout(()=>pass.style.transform="",300);
+    }
+  }
+});
+
+/* ================== QUOTES ================== */
+const quotes = {
+  career:[
+    "Your journey is not late. It is becoming.",
+    "Even quiet steps move mountains.",
+    "You are building something meaningful, even now."
+  ],
+  frustration:[
+    "Some winters teach strength before spring arrives.",
+    "Rest does not mean giving up.",
+    "You are allowed to pause, not to disappear."
+  ],
+  love:[
+    "You are deeply seen, deeply loved.",
+    "My belief in you never sleeps.",
+    "You never walk alone."
+  ]
+};
+
+const slides = document.getElementById("slides");
+
+document.getElementById("cta").onclick=()=>{
+  document.getElementById("celebrate").classList.add("hidden");
+  slides.classList.remove("hidden");
+
+  let all=[...quotes.career,...quotes.frustration,...quotes.love];
+  all.sort(()=>Math.random()-.5);
+
+  all.forEach((q,i)=>{
+    const s=document.createElement("div");
+    s.className="slide"+(i===0?" active":"");
+    s.innerHTML=`<div class="quote-box">${q}</div>`;
+    slides.appendChild(s);
+  });
+
+  let idx=0;
+  setInterval(()=>{
+    const s=document.querySelectorAll(".slide");
+    s[idx].classList.remove("active");
+    idx=(idx+1)%s.length;
+    s[idx].classList.add("active");
+  },5000);
+};
+</script>
+
+</body>
+</html>
