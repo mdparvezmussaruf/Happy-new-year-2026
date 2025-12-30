@@ -160,10 +160,10 @@ h1{
 <div id="slides" class="screen hidden"></div>
 
 <script>
-/* ===== CANVAS EFFECTS ===== */
+/* ===== MIXED LOVE SNOW CANVAS ===== */
 const canvas = document.getElementById("fx");
 const ctx = canvas.getContext("2d");
-let W,H;
+let W, H;
 
 function resize(){
   W = canvas.width = innerWidth;
@@ -172,65 +172,92 @@ function resize(){
 addEventListener("resize", resize);
 resize();
 
-/* Snow */
-const snow = Array.from({length:40},()=>({
-  x:Math.random()*W,
-  y:Math.random()*H,
-  r:Math.random()*2+1,
-  s:0.3+Math.random()
-}));
+/* Snow types */
+const SNOW_COUNT = 70; // safe for low-end devices
+const snow = [];
 
-/* Firework particles */
-let particles = [];
+function randomSnow(){
+  const type = Math.random();
+  return {
+    x: Math.random() * W,
+    y: Math.random() * H,
+    r: 2 + Math.random() * 3,
+    speed: 0.3 + Math.random() * 0.7,
+    drift: (Math.random() - 0.5) * 0.3,
+    rot: Math.random() * Math.PI,
+    rotSpeed: (Math.random() - 0.5) * 0.01,
+    type:
+      type < 0.33 ? "heart" :
+      type < 0.66 ? "flake" :
+      "dot"
+  };
+}
 
-function fireworkText(text){
-  ctx.font = "bold 42px serif";
-  ctx.fillStyle = "#fff";
-  const m = ctx.measureText(text);
-  const x = (W - m.width) / 2;
-  const y = H / 3;
-  ctx.fillText(text, x, y);
+for(let i=0;i<SNOW_COUNT;i++) snow.push(randomSnow());
 
-  const img = ctx.getImageData(0,0,W,H).data;
-  ctx.clearRect(0,0,W,H);
+function drawHeart(x,y,size){
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.bezierCurveTo(x - size, y - size, x - size*1.4, y + size/3, x, y + size);
+  ctx.bezierCurveTo(x + size*1.4, y + size/3, x + size, y - size, x, y);
+  ctx.fill();
+}
 
-  for(let i=0;i<img.length;i+=4){
-    if(img[i+3]>0 && Math.random()<0.02){
-      const px=(i/4)%W;
-      const py=Math.floor((i/4)/W);
-      particles.push({
-        x:px,y:py,
-        vx:(Math.random()-.5)*1.5,
-        vy:(Math.random()-.5)*1.5,
-        life:120
-      });
-    }
+function drawFlake(x,y,r,rot){
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.rotate(rot);
+  ctx.strokeStyle="rgba(255,255,255,0.7)";
+  ctx.lineWidth=1;
+  for(let i=0;i<6;i++){
+    ctx.beginPath();
+    ctx.moveTo(0,0);
+    ctx.lineTo(0,r);
+    ctx.stroke();
+    ctx.rotate(Math.PI/3);
   }
+  ctx.restore();
 }
 
 function animate(){
   ctx.clearRect(0,0,W,H);
 
-  ctx.fillStyle="rgba(255,255,255,.6)";
   snow.forEach(s=>{
-    ctx.beginPath();
-    ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
-    ctx.fill();
-    s.y+=s.s;
-    if(s.y>H)s.y=0;
-  });
+    ctx.save();
+    ctx.translate(s.x,s.y);
+    ctx.rotate(s.rot);
 
-  particles = particles.filter(p=>p.life-- >0);
-  particles.forEach(p=>{
-    ctx.fillStyle=`rgba(255,210,160,${p.life/120})`;
-    ctx.fillRect(p.x,p.y,2,2);
-    p.x+=p.vx;
-    p.y+=p.vy;
+    if(s.type==="heart"){
+      ctx.fillStyle="rgba(255,200,220,0.7)";
+      drawHeart(0,0,s.r*1.2);
+    }
+    else if(s.type==="flake"){
+      drawFlake(0,0,s.r*2,s.rot);
+    }
+    else{
+      ctx.fillStyle="rgba(255,255,255,0.8)";
+      ctx.beginPath();
+      ctx.arc(0,0,s.r,0,Math.PI*2);
+      ctx.fill();
+    }
+
+    ctx.restore();
+
+    /* motion */
+    s.y += s.speed;
+    s.x += s.drift;
+    s.rot += s.rotSpeed;
+
+    if(s.y > H){
+      Object.assign(s, randomSnow(), { y: -10 });
+    }
   });
 
   requestAnimationFrame(animate);
 }
+
 animate();
+
 
 /* ===== PASSWORD LOGIC ===== */
 const pass = document.getElementById("pass");
