@@ -167,10 +167,10 @@ h1{
 <div id="slides" class="screen hidden"></div>
 
 <script>
-/* ===== CANVAS SETUP ===== */
+/* ===== CANVAS EFFECTS (MIXED LOVE SNOW + FIREWORKS) ===== */
 const canvas = document.getElementById("fx");
 const ctx = canvas.getContext("2d");
-let W,H;
+let W, H;
 
 function resize(){
   W = canvas.width = innerWidth;
@@ -179,133 +179,162 @@ function resize(){
 addEventListener("resize", resize);
 resize();
 
-/* ===== NAME WRITTEN WITH FALLING SNOW ===== */
-let nameSnow = [];
+/* ---------- MIXED SNOW SYSTEM ---------- */
+const SNOW_COUNT = 70; // safe for low-end devices
+const snow = [];
 
-function createSnowText(text){
-  const off = document.createElement("canvas");
-  off.width = W;
-  off.height = H;
-  const o = off.getContext("2d");
+function createSnow(){
+  const t = Math.random();
+  return {
+    x: Math.random() * W,
+    y: Math.random() * H,
+    r: 2 + Math.random() * 3,
+    speed: 0.25 + Math.random() * 0.6,
+    drift: (Math.random() - 0.5) * 0.25,
+    rot: Math.random() * Math.PI,
+    rotSpeed: (Math.random() - 0.5) * 0.008,
+    type: t < 0.34 ? "heart" : t < 0.67 ? "flake" : "dot"
+  };
+}
 
-  o.font = "bold 64px serif";
-  o.textAlign = "center";
-  o.fillStyle = "#fff";
-  o.fillText(text, W/2, H*0.35);
+for(let i=0;i<SNOW_COUNT;i++) snow.push(createSnow());
 
-  const img = o.getImageData(0,0,W,H).data;
-  nameSnow = [];
+function drawHeart(x,y,s){
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.bezierCurveTo(x-s, y-s, x-s*1.4, y+s/3, x, y+s);
+  ctx.bezierCurveTo(x+s*1.4, y+s/3, x+s, y-s, x, y);
+  ctx.fill();
+}
+
+function drawFlake(x,y,r,rot){
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.rotate(rot);
+  ctx.strokeStyle="rgba(255,255,255,0.7)";
+  ctx.lineWidth=1;
+  for(let i=0;i<6;i++){
+    ctx.beginPath();
+    ctx.moveTo(0,0);
+    ctx.lineTo(0,r);
+    ctx.stroke();
+    ctx.rotate(Math.PI/3);
+  }
+  ctx.restore();
+}
+
+/* ---------- FIREWORK PARTICLES ---------- */
+let particles = [];
+
+function fireworkText(text){
+  ctx.font = "bold 44px serif";
+  ctx.fillStyle = "#fff";
+  const m = ctx.measureText(text);
+  const x = (W - m.width) / 2;
+  const y = H / 3;
+  ctx.fillText(text, x, y);
+
+  const img = ctx.getImageData(0,0,W,H).data;
+  ctx.clearRect(0,0,W,H);
 
   for(let i=0;i<img.length;i+=4){
-    if(img[i+3]>0 && Math.random()<0.03){
-      const x=(i/4)%W;
-      const y=Math.floor((i/4)/W);
-      nameSnow.push({x,y,fall:H+Math.random()*200});
+    if(img[i+3]>0 && Math.random()<0.018){
+      const px=(i/4)%W;
+      const py=Math.floor((i/4)/W);
+      particles.push({
+        x:px, y:py,
+        vx:(Math.random()-.5)*1.3,
+        vy:(Math.random()-.8)*1.6,
+        life:140
+      });
     }
   }
 }
 
-/* ===== MIXED SNOW ===== */
-const snow=[];
-const SNOW_COUNT=60;
-
-function newSnow(){
-  const t=Math.random();
-  return{
-    x:Math.random()*W,
-    y:Math.random()*H,
-    r:2+Math.random()*3,
-    s:0.3+Math.random()*0.6,
-    d:(Math.random()-.5)*0.3,
-    type:t<0.33?"heart":t<0.66?"flake":"dot"
-  };
-}
-for(let i=0;i<SNOW_COUNT;i++) snow.push(newSnow());
-
-function drawHeart(x,y,r){
-  ctx.beginPath();
-  ctx.moveTo(x,y);
-  ctx.bezierCurveTo(x-r,y-r,x-r*1.4,y+r/3,x,y+r);
-  ctx.bezierCurveTo(x+r*1.4,y+r/3,x+r,y-r,x,y);
-  ctx.fill();
-}
-
-/* ===== LOOP ===== */
+/* ---------- MAIN ANIMATION LOOP ---------- */
 function animate(){
   ctx.clearRect(0,0,W,H);
 
+  /* snow */
   snow.forEach(s=>{
     ctx.save();
     ctx.translate(s.x,s.y);
+    ctx.rotate(s.rot);
+
     if(s.type==="heart"){
-      ctx.fillStyle="rgba(255,190,210,.7)";
-      drawHeart(0,0,s.r);
-    }else{
-      ctx.fillStyle="rgba(255,255,255,.8)";
+      ctx.fillStyle="rgba(255,190,210,0.7)";
+      drawHeart(0,0,s.r*1.2);
+    } else if(s.type==="flake"){
+      drawFlake(0,0,s.r*2,s.rot);
+    } else {
+      ctx.fillStyle="rgba(255,255,255,0.8)";
       ctx.beginPath();
       ctx.arc(0,0,s.r,0,Math.PI*2);
       ctx.fill();
     }
+
     ctx.restore();
-    s.y+=s.s; s.x+=s.d;
-    if(s.y>H) Object.assign(s,newSnow(),{y:-10});
+
+    s.y += s.speed;
+    s.x += s.drift;
+    s.rot += s.rotSpeed;
+
+    if(s.y > H){
+      Object.assign(s, createSnow(), { y:-10 });
+    }
   });
 
-  nameSnow.forEach(p=>{
-    if(p.fall>p.y){
-      ctx.fillStyle="rgba(255,255,255,.95)";
-      ctx.beginPath();
-      ctx.arc(p.x,p.fall,2,0,Math.PI*2);
-      ctx.fill();
-      p.fall-=1.4;
-    }
+  /* fireworks */
+  particles = particles.filter(p=>p.life-- >0);
+  particles.forEach(p=>{
+    ctx.fillStyle=`rgba(255,200,160,${p.life/140})`;
+    ctx.fillRect(p.x,p.y,2,2);
+    p.x+=p.vx;
+    p.y+=p.vy;
   });
 
   requestAnimationFrame(animate);
 }
 animate();
 
-/* ===== UNLOCK ===== */
-const pass=document.getElementById("pass");
-const enterBtn=document.getElementById("enterBtn");
-const lock=document.getElementById("lock");
-const celebrate=document.getElementById("celebrate");
-const cta=document.getElementById("cta");
+/* ===== PASSWORD LOGIC ===== */
+const pass = document.getElementById("pass");
+const enterBtn = document.getElementById("enterBtn");
+const lock = document.getElementById("lock");
+const celebrate = document.getElementById("celebrate");
+const cta = document.getElementById("cta");
 
 function unlock(){
-  if(pass.value.trim().toLowerCase()==="farhana akter rova"){
+  if(pass.value.trim().toLowerCase() === "farhana akter rova"){
     lock.classList.add("hidden");
     celebrate.classList.remove("hidden");
-    document.getElementById("bgm").volume=0.22;
-    document.getElementById("bgm").play().catch(()=>{});
-    createSnowText("Farhana Akter Rova");
+
+    const bgm = document.getElementById("bgm");
+    bgm.volume = 0.22;
+    bgm.play().catch(()=>{});
+
+    fireworkText("Farhana Akter Rova");
     setTimeout(()=>cta.style.display="inline-block",8000);
   }
 }
-enterBtn.onclick=unlock;
-pass.addEventListener("keydown",e=>e.key==="Enter"&&unlock());
+enterBtn.onclick = unlock;
+pass.addEventListener("keydown",e=>e.key==="Enter" && unlock());
 
-/* ===== QUOTES ===== */
-const quotes=[
-"You are stronger than every doubt you face.",
-"Your efforts today are shaping a beautiful future.",
-"You are deeply loved and never alone.",
-"Every struggle is proof of your courage.",
-"You are becoming everything you dreamed of.",
-  "You matter to me—not just in my heart, but in my decisions.", 
-  "If life tests us, I want to face it with you, not run from it.",
-  "Whatever pace we take, my care for you is steady and sincere.",
-  "Being with you makes me want to become more stable, more patient, and more responsible.",
-  "Loving you makes me calmer, not confused—that’s how I know it matters.",
-  "If love is a journey, I want to walk it with you our lifetime, not pass through it.",
-  "রোভা, ভালোবাসা যদি প্রতিশ্রুতি হয়, আমারটা জোরে বলা নয়, কিন্তু যত্নে গড়া, সত্য, স্থির। ",
-  "আমি নিজেকে গড়ছি শক্ত করে, তোমাকে আটকে রাখার জন্য নয়, পাশে দাঁড়ানোর সাহস রাখার জন্য।"
-  "আর যদি সময় আমাদের পরীক্ষা নেয়, অপেক্ষা শেখায়, আরও পরিণত করে— তবে জেনে রেখো, আমার অনুভূতি কোনো মুহূর্ত নয়, এটা একটাই দিক— তোমার দিকে।"
+/* ===== PROFESSION-SPECIFIC QUOTES ===== */
+const quotes = [
+  "You are stronger than every doubt you face.",
+  "You shape futures with knowledge and kindness.",
+  "You hold the family together with invisible strength.",
+  "Every setback is training you for success.",
+  "Your efforts today are shaping a beautiful future.",
+  "You are not late — you are on your own perfect timeline.",
+  "You are deeply loved, valued, and never alone."
 ];
 
-cta.onclick=()=>{
+cta.onclick = ()=>{
   celebrate.classList.add("hidden");
   slides.classList.remove("hidden");
+
   quotes.sort(()=>Math.random()-.5);
   quotes.forEach((q,i)=>{
     const d=document.createElement("div");
@@ -313,6 +342,7 @@ cta.onclick=()=>{
     d.innerHTML=`<div class="quote">${q}</div>`;
     slides.appendChild(d);
   });
+
   let i=0;
   setInterval(()=>{
     const s=document.querySelectorAll(".slide");
@@ -327,6 +357,7 @@ if("serviceWorker" in navigator){
   navigator.serviceWorker.register("sw.js");
 }
 </script>
+
 
 </body>
 </html>
