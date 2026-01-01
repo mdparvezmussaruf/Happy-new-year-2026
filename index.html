@@ -132,6 +132,65 @@ h1{
   font-size:clamp(1.2rem,3.6vw,2rem);
   line-height:1.6;
   text-align:center;
+
+
+/* ===== CUSTOM PHOTO FONT ===== */
+@font-face{
+  font-family: "FaruqPhoto";
+  src: url("fonts/FnFaruqSonodAnsiv2-Regular.ttf") format("truetype");
+  font-weight: normal;
+}
+
+@font-face{
+  font-family: "FaruqPhoto";
+  src: url("fonts/FnFaruqSonodAnsiv2-Italic-Regular.ttf") format("truetype");
+  font-weight: italic;
+}
+
+/* ===== LOVE MESSAGE SECTION ===== */
+#loveMessage{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:30px;
+  text-align:center;
+  z-index:3;
+}
+
+#loveMessage .box{
+  max-width:900px;
+  background:rgba(255,255,255,.12);
+  backdrop-filter:blur(14px);
+  border-radius:22px;
+  padding:40px;
+}
+
+#loveMessage .quote{
+  font-size:clamp(1.4rem,4vw,2.2rem);
+  line-height:1.6;
+}
+
+#revealBtn{
+  margin-top:28px;
+  padding:14px 34px;
+  border-radius:40px;
+  border:1px solid #f5d37b;
+  background:transparent;
+  color:#f5d37b;
+  cursor:pointer;
+  display:none;
+}
+
+#banglaText{
+  margin-top:30px;
+  font-family:"FaruqPhoto", serif;
+  font-size:clamp(1.2rem,3.4vw,1.8rem);
+  line-height:1.9;
+  white-space:pre-line;
+  display:none;
+}
 }
 </style>
 </head>
@@ -165,6 +224,31 @@ h1{
 
 <!-- SLIDES -->
 <div id="slides" class="screen hidden"></div>
+
+<!-- LOVE MESSAGE -->
+<div id="loveMessage" class="hidden">
+  <div class="box">
+    <div class="quote">
+      “Some feelings are too deep for words…  
+      but time reveals everything.”
+    </div>
+
+    <button id="revealBtn">Read My Heart</button>
+
+    <div id="banglaText">
+শুভ সকাল আমার ভালোবাসা 🌸
+এই সুন্দর সকালে তোমাকে বলতে চাই—তুমি আমার জীবনের সবচেয়ে অসাধারণ মানুষ। তোমার হাসি আমার দিনের আলো, তোমার কণ্ঠ আমার শান্তি।
+
+আমি তোমাকে ভীষণ ভালোবাসি আমার আদরের কিউট বেবি। আমার জীবনের প্রতিটা মুহূর্তে, শেষ নিঃশ্বাস পর্যন্ত তোমাকেই চাই। তুমি আমার মিষ্টি রাণী, আমার হৃদয়ের একমাত্র অধিকারী।
+
+আমি কথা দিচ্ছি—তুমি শুধু আমার বর্তমানই নও, আমার ভবিষ্যৎও তুমি। আজ, আগামীকাল, আর চিরকাল তুমি আমারই থাকবে।
+
+ভালোবাসি তোমাকে সীমাহীনভাবে ❤  
+সবসময়, সবকিছুর পরেও… শুধু তুমি।
+    </div>
+  </div>
+</div>
+
 
 <script>
 /* ===== CANVAS EFFECTS (MIXED LOVE SNOW + FIREWORKS) ===== */
@@ -359,6 +443,31 @@ cta.onclick = ()=>{
 if("serviceWorker" in navigator){
   navigator.serviceWorker.register("sw.js");
 }
+
+/* ===== LOVE MESSAGE LOGIC ===== */
+const loveMessage = document.getElementById("loveMessage");
+const revealBtn = document.getElementById("revealBtn");
+const banglaText = document.getElementById("banglaText");
+
+/* show after slides */
+cta.addEventListener("click", ()=>{
+  setTimeout(()=>{
+    slides.classList.add("hidden");
+    loveMessage.classList.remove("hidden");
+
+    /* button appears after 10 seconds */
+    setTimeout(()=>{
+      revealBtn.style.display="inline-block";
+    },10000);
+
+  },1200);
+});
+
+revealBtn.onclick = ()=>{
+  banglaText.style.display="block";
+  revealBtn.style.display="none";
+};
+
 </script>
 
 
